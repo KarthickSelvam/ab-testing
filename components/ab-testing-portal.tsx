@@ -43,6 +43,7 @@ interface Treatment {
   action: ActionType
   nextBestVariations?: string[]
   checkValue?: CheckValueItem[]
+  rankingType?: 'dynamic' | 'static';
 }
 
 interface Experiment {
@@ -118,6 +119,7 @@ export function AbTestingPortal() {
   const [filter, setFilter] = useState("all")
   const [variations, setVariations] = useState<string[]>(["Control", "Variation A"])
   const [valueFormat, setValueFormat] = useState<'number' | 'string'>('number');
+  const [rankingType, setRankingType] = useState<'dynamic' | 'static'>('static');
 
   const togglePause = (id: number) => {
     setExperiments(experiments.map(exp => 
@@ -148,7 +150,11 @@ export function AbTestingPortal() {
 
   const updateTreatment = (id: number, field: string, value: any) => {
     setTreatments(treatments.map(v => 
-      v.id === id ? { ...v, [field]: value } : v
+      v.id === id ? { 
+        ...v, 
+        [field]: value,
+        ...(field === 'action' && value === 'nextBestVariation' ? { rankingType: 'static' } : {})
+      } : v
     ))
   }
 
@@ -427,59 +433,78 @@ export function AbTestingPortal() {
                               </div>
                               {treatment.action === 'nextBestVariation' && (
                                 <div className="space-y-2">
-                                  <Label className="text-sm font-medium">Next Best Variations:</Label>
-                                  <div className="flex flex-col gap-2">
-                                    <div className="flex justify-start">
-                                      <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                          <Button variant="outline" className="w-[200px]">
-                                            Select Variation
-                                            <ChevronDownIcon className="ml-2 h-4 w-4" />
-                                          </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                          {variations.filter(v => v !== treatment.name && !treatment.nextBestVariations?.includes(v)).map(v => (
-                                            <DropdownMenuItem key={v} onSelect={() => addNextBestVariation(treatment.id, v)}>
-                                              {v}
-                                            </DropdownMenuItem>
-                                          ))}
-                                        </DropdownMenuContent>
-                                      </DropdownMenu>
-                                    </div>
-                                    <div className="space-y-2">
-                                      {treatment.nextBestVariations?.map((variation, index) => (
-                                        <div key={index} className="flex items-center">
-                                          <span className="flex-1 truncate">{variation}</span>
-                                          <div className="flex items-center gap-1 ml-2">
-                                            <Button
-                                              variant="ghost"
-                                              size="sm"
-                                              onClick={() => moveVariationOrder(treatment.id, index, 'up')}
-                                              disabled={index === 0}
-                                            >
-                                              <ArrowUpIcon className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                              variant="ghost"
-                                              size="sm"
-                                              onClick={() => moveVariationOrder(treatment.id, index, 'down')}
-                                              disabled={index === treatment.nextBestVariations.length - 1}
-                                            >
-                                              <ArrowDownIcon className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                              variant="ghost"
-                                              size="sm"
-                                              onClick={() => removeNextBestVariation(treatment.id, variation)}
-                                            >
-                                              <XIcon className="h-4 w-4" />
-                                              <span className="sr-only">Remove {variation}</span>
-                                            </Button>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
+                                  <div className="flex items-center gap-4 mb-2">
+                                    <Label className="w-24">Ranking Type:</Label>
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" className="w-40">
+                                          {rankingType}
+                                          <ChevronDownIcon className="ml-2 h-4 w-4" />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent>
+                                        <DropdownMenuItem onSelect={() => setRankingType('static')}>static</DropdownMenuItem>
+                                        <DropdownMenuItem onSelect={() => setRankingType('dynamic')}>dynamic</DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
                                   </div>
+                                  {rankingType === 'static' && (
+                                    <>
+                                      <Label className="text-sm font-medium">Next Best Variations:</Label>
+                                      <div className="flex flex-col gap-2">
+                                        <div className="flex justify-start">
+                                          <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                              <Button variant="outline" className="w-[200px]">
+                                                Select Variation
+                                                <ChevronDownIcon className="ml-2 h-4 w-4" />
+                                              </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                              {variations.filter(v => v !== treatment.name && !treatment.nextBestVariations?.includes(v)).map(v => (
+                                                <DropdownMenuItem key={v} onSelect={() => addNextBestVariation(treatment.id, v)}>
+                                                  {v}
+                                                </DropdownMenuItem>
+                                              ))}
+                                            </DropdownMenuContent>
+                                          </DropdownMenu>
+                                        </div>
+                                        <div className="space-y-2">
+                                          {treatment.nextBestVariations?.map((variation, index) => (
+                                            <div key={index} className="flex items-center">
+                                              <span className="flex-1 truncate">{variation}</span>
+                                              <div className="flex items-center gap-1 ml-2">
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  onClick={() => moveVariationOrder(treatment.id, index, 'up')}
+                                                  disabled={index === 0}
+                                                >
+                                                  <ArrowUpIcon className="h-4 w-4" />
+                                                </Button>
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  onClick={() => moveVariationOrder(treatment.id, index, 'down')}
+                                                  disabled={index === treatment.nextBestVariations.length - 1}
+                                                >
+                                                  <ArrowDownIcon className="h-4 w-4" />
+                                                </Button>
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  onClick={() => removeNextBestVariation(treatment.id, variation)}
+                                                >
+                                                  <XIcon className="h-4 w-4" />
+                                                  <span className="sr-only">Remove {variation}</span>
+                                                </Button>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    </>
+                                  )}
                                 </div>
                               )}
                               {treatment.action === 'checkValue' && (
@@ -682,57 +707,35 @@ export function AbTestingPortal() {
                         </Button>
                         <Dialog>
                           <DialogTrigger asChild>
-                            <Button variant="ghost" size="sm" aria-label={`View details for ${experiment.name}`}>
+                            <Button variant="ghost" size="sm">
                               <EyeIcon className="h-4 w-4" />
                               <span className="sr-only">View</span>
                             </Button>
                           </DialogTrigger>
-                          <DialogContent className="sm:max-w-[700px]">
+                          <DialogContent>
                             <DialogHeader>
-                              <DialogTitle className="text-2xl font-bold">{experiment.name}</DialogTitle>
+                              <DialogTitle>View Experiment</DialogTitle>
                             </DialogHeader>
-                            <div className="mt-4 space-y-6">
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <h3 className="font-semibold text-sm text-muted-foreground">Key</h3>
-                                  <p className="mt-1">{experiment.key}</p>
-                                </div>
-                                <div>
-                                  <h3 className="font-semibold text-sm text-muted-foreground">Status</h3>
-                                  <Badge className="mt-1" variant={experiment.isPaused ? "secondary" : "default"}>
-                                    {experiment.isPaused ? "Paused" : experiment.status}
-                                  </Badge>
-                                </div>
-                                <div>
-                                  <h3 className="font-semibold text-sm text-muted-foreground">Owner</h3>
-                                  <p className="mt-1">John Doe</p>
-                                </div>
-                                <div>
-                                  <h3 className="font-semibold text-sm text-muted-foreground">Created</h3>
-                                  <p className="mt-1">2023-06-15 by Jane Smith</p>
-                                </div>
-                                <div>
-                                  <h3 className="font-semibold text-sm text-muted-foreground">Last Modified</h3>
-                                  <p className="mt-1">2023-06-20 by John Doe</p>
-                                </div>
+                            <div className="space-y-4">
+                              <div>
+                                <h3 className="font-semibold">Name</h3>
+                                <p>{experiment.name}</p>
                               </div>
                               <div>
-                                <h3 className="font-semibold text-sm text-muted-foreground mb-2">Variations</h3>
-                                <div className="grid grid-cols-2 gap-2">
+                                <h3 className="font-semibold">Key</h3>
+                                <p>{experiment.key}</p>
+                              </div>
+                              <div>
+                                <h3 className="font-semibold">Status</h3>
+                                <p>{experiment.status}</p>
+                              </div>
+                              <div>
+                                <h3 className="font-semibold">Variations</h3>
+                                <ul className="list-disc pl-5">
                                   {experiment.variations.map((variation, index) => (
-                                    <div key={index} className="flex items-center space-x-2 bg-muted p-2 rounded-md">
-                                      <div className="w-2 h-2 rounded-full bg-primary" />
-                                      <span>{variation}</span>
-                                    </div>
+                                    <li key={index}>{variation}</li>
                                   ))}
-                                </div>
-                              </div>
-                              <div>
-                                <h3 className="font-semibold text-sm text-muted-foreground mb-2">Rules</h3>
-                                <div className="bg-muted p-3 rounded-md">
-                                  <p className="text-sm">IF user.id is equal to 12345</p>
-                                  <p className="text-sm">THEN show Variation A</p>
-                                </div>
+                                </ul>
                               </div>
                             </div>
                           </DialogContent>
