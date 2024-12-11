@@ -1,6 +1,6 @@
 "use client"
 
-import { X, Save, Plus, Play } from 'lucide-react'
+import { X, Save, Plus, Play, Square } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { MultiValueInput } from "./multi-value-input"
@@ -18,10 +18,41 @@ interface EditExperimentModalProps {
 export function EditExperimentModal({ experiment, isOpen, onClose, onSave }: EditExperimentModalProps) {
   const [activeTab, setActiveTab] = useState('overview')
   const [editedExperiment, setEditedExperiment] = useState<Experiment>(experiment)
+  const [fieldDisabled, setFieldDisabled] = useState({
+    title: false,
+    objective: false,
+    variations: experiment.status !== 'Draft',
+    rules: false,
+  });
 
   useEffect(() => {
     setEditedExperiment(experiment)
   }, [experiment])
+
+  useEffect(() => {
+    if (experiment.status === 'Draft') {
+      setFieldDisabled({
+        title: false,
+        objective: false,
+        variations: false,
+        rules: false,
+      });
+    } else if (experiment.status === 'Running') {
+      setFieldDisabled({
+        title: false,
+        objective: false,
+        variations: true,
+        rules: true,
+      });
+    } else {
+      setFieldDisabled({
+        title: true,
+        objective: true,
+        variations: true,
+        rules: true,
+      });
+    }
+  }, [experiment.status]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -59,8 +90,11 @@ export function EditExperimentModal({ experiment, isOpen, onClose, onSave }: Edi
                   name="title"
                   value={editedExperiment.title}
                   onChange={handleInputChange}
+                  disabled={fieldDisabled.title}
                   placeholder="Enter experiment title"
-                  className="w-full h-[52px] px-4 rounded-lg border border-gray-300 text-[16px] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3B82F6]"
+                  className={`w-full h-[52px] px-4 rounded-lg border border-gray-300 text-[16px] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] ${
+                    fieldDisabled.title ? 'bg-gray-100 cursor-not-allowed' : ''
+                  }`}
                 />
               </div>
               <div className="space-y-1">
@@ -84,8 +118,11 @@ export function EditExperimentModal({ experiment, isOpen, onClose, onSave }: Edi
                 name="objective"
                 value={editedExperiment.objective}
                 onChange={handleInputChange}
+                disabled={fieldDisabled.objective}
                 placeholder="Describe the hypothesis of this experiment"
-                className="w-full h-[120px] px-4 py-3 rounded-lg border border-gray-300 text-[16px] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] resize-none"
+                className={`w-full h-[120px] px-4 py-3 rounded-lg border border-gray-300 text-[16px] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] resize-none ${
+                  fieldDisabled.objective ? 'bg-gray-100 cursor-not-allowed' : ''
+                }`}
               />
             </div>
             <div className="space-y-1">
@@ -97,6 +134,8 @@ export function EditExperimentModal({ experiment, isOpen, onClose, onSave }: Edi
                 values={editedExperiment.variations}
                 onChange={handleVariationsChange}
                 placeholder="Enter a variation"
+                disabled={fieldDisabled.variations}
+                disableRemove={fieldDisabled.variations}
               />
             </div>
           </div>
@@ -107,6 +146,7 @@ export function EditExperimentModal({ experiment, isOpen, onClose, onSave }: Edi
             variations={editedExperiment.variations} 
             initialRules={editedExperiment.rules}
             onChange={(newRules) => setEditedExperiment(prev => ({ ...prev, rules: newRules }))}
+            disabled={fieldDisabled.rules}
           />
         );
       case 'targeting':
@@ -144,10 +184,13 @@ export function EditExperimentModal({ experiment, isOpen, onClose, onSave }: Edi
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
+                  disabled={experiment.status !== 'Draft' && tab !== 'overview'}
                   className={`flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
                     activeTab === tab
                       ? 'bg-[#006FCF] text-white'
-                      : 'text-[#006FCF] hover:bg-[#E6F2FF]'
+                      : experiment.status !== 'Draft' && tab !== 'overview'
+                        ? 'text-gray-400 cursor-not-allowed'
+                        : 'text-[#006FCF] hover:bg-[#E6F2FF]'
                   }`}
                 >
                   {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -159,57 +202,38 @@ export function EditExperimentModal({ experiment, isOpen, onClose, onSave }: Edi
         </div>
         <div className="border-t border-gray-200 sticky bottom-0 bg-white">
           <div className="px-8 py-6 flex justify-end gap-3">
-            {activeTab === 'overview' ? (
+            {editedExperiment.status === 'Draft' || editedExperiment.status === 'Stopped' ? (
               <>
                 <button
-                  onClick={() => setActiveTab('rules')}
+                  onClick={() => handleSave(editedExperiment.status)}
                   className="flex-1 h-11 rounded-lg border border-[#3B82F6] text-[#3B82F6] text-[15px] font-medium hover:bg-[#EBF2FF] transition-colors flex items-center justify-center gap-2"
                 >
-                  <Plus className="h-4 w-4" />
-                  Add Rules
+                  <Save className="h-4 w-4" />
+                  Save {editedExperiment.status === 'Draft' ? 'Draft' : 'Stopped'}
                 </button>
-                {editedExperiment.status === 'Draft' ? (
-                  <>
-                    <button
-                      onClick={() => handleSave('Draft')}
-                      className="flex-1 h-11 rounded-lg border border-[#3B82F6] text-[#3B82F6] text-[15px] font-medium hover:bg-[#EBF2FF] transition-colors flex items-center justify-center gap-2"
-                    >
-                      <Save className="h-4 w-4" />
-                      Save Draft
-                    </button>
-                    <button
-                      onClick={() => handleSave('Running')}
-                      className="flex-1 h-11 rounded-lg bg-[#3B82F6] text-white text-[15px] font-medium hover:bg-[#2563EB] transition-colors flex items-center justify-center gap-2"
-                    >
-                      <Play className="h-4 w-4" />
-                      Run Experiment
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    onClick={() => handleSave(editedExperiment.status)}
-                    className="flex-1 h-11 rounded-lg bg-[#3B82F6] text-white text-[15px] font-medium hover:bg-[#2563EB] transition-colors flex items-center justify-center gap-2"
-                  >
-                    <Save className="h-4 w-4" />
-                    Save
-                  </button>
-                )}
+                <button
+                  onClick={() => handleSave('Running')}
+                  className="flex-1 h-11 rounded-lg bg-[#3B82F6] text-white text-[15px] font-medium hover:bg-[#2563EB] transition-colors flex items-center justify-center gap-2"
+                >
+                  <Play className="h-4 w-4" />
+                  {editedExperiment.status === 'Draft' ? 'Run Experiment' : 'Start Experiment'}
+                </button>
               </>
-            ) : activeTab === 'rules' ? (
+            ) : editedExperiment.status === 'Running' ? (
               <>
                 <button
-                  onClick={() => setActiveTab('targeting')}
-                  className="flex-1 h-11 rounded-lg border border-[#3B82F6] text-[#3B82F6] text-[15px] font-medium hover:bg-[#EBF2FF] transition-colors flex items-center justify-center gap-2"
+                  onClick={() => handleSave('Stopped')}
+                  className="flex-1 h-11 rounded-lg bg-red-500 text-white text-[15px] font-medium hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
                 >
-                  <Plus className="h-4 w-4" />
-                  Add Targets
+                  <Square className="h-4 w-4" />
+                  Stop Experiment
                 </button>
                 <button
                   onClick={() => handleSave(editedExperiment.status)}
                   className="flex-1 h-11 rounded-lg bg-[#3B82F6] text-white text-[15px] font-medium hover:bg-[#2563EB] transition-colors flex items-center justify-center gap-2"
                 >
                   <Save className="h-4 w-4" />
-                  Save
+                  Save Changes
                 </button>
               </>
             ) : (

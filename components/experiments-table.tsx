@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Edit, Trash2, Play, Pause, RotateCcw } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Edit, Trash2, Play, Square, RotateCcw } from 'lucide-react'
 import { useExperiments, Experiment } from "@/utils/experimentData"
 import { Button } from "@/components/ui/button"
 import {
@@ -16,6 +16,12 @@ import { SortAscIcon, SortDescIcon, SortIcon } from "./icons"
 import type { FilterValues } from "./filter-dialog"
 import { useState } from 'react';
 import { EditExperimentModal } from "./edit-experiment-modal"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 type SortConfig = {
   key: keyof Experiment;
@@ -124,11 +130,11 @@ export function ExperimentsTable({ filters }: ExperimentsTableProps) {
     let newStatus;
     switch (experiment.status) {
       case 'Draft':
-      case 'Paused':
+      case 'Stopped':
         newStatus = 'Running';
         break;
       case 'Running':
-        newStatus = 'Paused';
+        newStatus = 'Stopped';
         break;
       case 'Marked for Deletion':
         newStatus = experiment.statusHistory[experiment.statusHistory.length - 2]?.status || 'Draft';
@@ -151,7 +157,7 @@ export function ExperimentsTable({ filters }: ExperimentsTableProps) {
   const getStatusActionButton = (experiment: Experiment) => {
     switch (experiment.status) {
       case 'Draft':
-      case 'Paused':
+      case 'Stopped':
         return (
           <Button 
             variant="ghost" 
@@ -171,14 +177,14 @@ export function ExperimentsTable({ filters }: ExperimentsTableProps) {
           <Button 
             variant="ghost" 
             size="sm" 
-            className="h-8 w-8 p-0 text-amber-500 hover:text-amber-600 hover:bg-amber-50"
+            className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
             onClick={(e) => {
               e.stopPropagation();
               handleStatusChange(experiment);
             }}
           >
-            <Pause className="h-4 w-4" />
-            <span className="sr-only">Pause</span>
+            <Square className="h-4 w-4" />
+            <span className="sr-only">Stop</span>
           </Button>
         );
       case 'Marked for Deletion':
@@ -198,6 +204,20 @@ export function ExperimentsTable({ filters }: ExperimentsTableProps) {
         );
       default:
         return null;
+    }
+  };
+
+  const getStatusActionTooltip = (experiment: Experiment) => {
+    switch (experiment.status) {
+      case 'Draft':
+      case 'Stopped':
+        return 'Start experiment';
+      case 'Running':
+        return 'Stop experiment';
+      case 'Marked for Deletion':
+        return 'Restore experiment';
+      default:
+        return 'Change experiment status';
     }
   };
 
@@ -227,6 +247,17 @@ export function ExperimentsTable({ filters }: ExperimentsTableProps) {
                 <div className="flex items-center">
                   Experiment Key
                   {getSortIcon('key')}
+                </div>
+              </th>
+              <th 
+                className={`px-6 py-3 text-left text-sm font-medium text-gray-900 border cursor-pointer hover:bg-gray-100 ${
+                  sortConfig?.key === 'createdBy' ? 'bg-gray-100' : ''
+                }`}
+                onClick={() => handleSort('createdBy')}
+              >
+                <div className="flex items-center">
+                  Created By
+                  {getSortIcon('createdBy')}
                 </div>
               </th>
               <th 
@@ -263,31 +294,55 @@ export function ExperimentsTable({ filters }: ExperimentsTableProps) {
               >
                 <td className="px-6 py-4 text-sm text-gray-900 border">{experiment.title}</td>
                 <td className="px-6 py-4 text-sm text-gray-500 font-mono border">{experiment.key}</td>
+                <td className="px-6 py-4 text-sm text-gray-900 border">{experiment.createdBy}</td>
                 <td className="px-6 py-4 text-sm text-gray-900 border">{experiment.status}</td>
                 <td className="px-6 py-4 text-sm text-gray-900 border">
                   {formatDate(experiment.createdDate)}
                 </td>
                 <td className="px-6 py-4 border">
                   <div className="flex space-x-2">
-                    {getStatusActionButton(experiment)}
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-8 w-8 p-0"
-                      onClick={(e) => handleEditClick(experiment, e)}
-                    >
-                      <Edit className="h-4 w-4" />
-                      <span className="sr-only">Edit</span>
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-8 w-8 p-0"
-                      disabled={experiment.status === 'Marked for Deletion'}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">Delete</span>
-                    </Button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          {getStatusActionButton(experiment)}
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{getStatusActionTooltip(experiment)}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0"
+                            onClick={(e) => handleEditClick(experiment, e)}
+                          >
+                            <Edit className="h-4 w-4" />
+                            <span className="sr-only">Edit</span>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Edit experiment</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0"
+                            disabled={experiment.status === 'Marked for Deletion'}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">Delete</span>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Delete experiment</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                 </td>
               </tr>

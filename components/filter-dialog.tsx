@@ -22,7 +22,7 @@ export interface FilterValues {
   status: string[]
 }
 
-const STATUS_OPTIONS = ["Draft", "Running", "Paused", "Marked for Deletion"]
+const STATUS_OPTIONS = ["Draft", "Running", "Stopped", "Marked for Deletion"]
 
 export function FilterDialog({ isOpen, onClose, onApply, onReset, initialValues }: FilterDialogProps) {
   const [filters, setFilters] = React.useState<FilterValues>(initialValues || {

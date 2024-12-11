@@ -1,4 +1,4 @@
-import { Clock, Edit, Play, Pause, Trash2 } from 'lucide-react'
+import { Clock, Edit, Play, Square, Trash2 } from 'lucide-react'
 import { StatusTransition } from '@/utils/experimentData'
 
 interface StatusTimelineProps {
@@ -15,6 +15,8 @@ const getStatusIcon = (status: string) => {
       return Pause
     case 'marked for deletion':
       return Trash2
+    case 'stopped':
+      return Square
     default:
       return Clock
   }
@@ -27,6 +29,8 @@ const getStatusIconColor = (status: string) => {
     case 'paused':
       return 'text-amber-500'
     case 'marked for deletion':
+      return 'text-red-500'
+    case 'stopped':
       return 'text-red-500'
     default:
       return 'text-blue-500'

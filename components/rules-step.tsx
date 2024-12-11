@@ -36,9 +36,10 @@ interface RulesStepProps {
   variations: string[]
   initialRules?: Rule[]
   onChange?: (rules: Rule[]) => void
+  disabled?: boolean
 }
 
-export function RulesStep({ variations, initialRules = [], onChange }: RulesStepProps) {
+export function RulesStep({ variations, initialRules = [], onChange, disabled = false }: RulesStepProps) {
   const [rules, setRules] = useState<Rule[]>(initialRules)
 
   const actions = ["allow", "suppress", "nextBestVariation", "checkValue"]
@@ -170,7 +171,8 @@ export function RulesStep({ variations, initialRules = [], onChange }: RulesStep
           <p className="text-[15px] text-gray-500 mb-4">No rules configured yet</p>
           <button
             onClick={addRule}
-            className="h-11 px-6 rounded-lg bg-[#3B82F6] text-white text-[15px] font-medium hover:bg-[#2563EB] transition-colors flex items-center gap-2"
+            disabled={disabled}
+            className={`h-11 px-6 rounded-lg bg-[#3B82F6] text-white text-[15px] font-medium hover:bg-[#2563EB] transition-colors flex items-center gap-2 ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <Plus className="h-4 w-4" />
             Add Rule
@@ -197,6 +199,7 @@ export function RulesStep({ variations, initialRules = [], onChange }: RulesStep
                     <Select
                       value={rule.variation}
                       onValueChange={(value) => updateRule(index, 'variation', value)}
+                      disabled={disabled}
                     >
                       <SelectTrigger className="h-[52px]">
                         <SelectValue placeholder="Select variation" />
@@ -217,6 +220,7 @@ export function RulesStep({ variations, initialRules = [], onChange }: RulesStep
                     <Select
                       value={rule.action}
                       onValueChange={(value) => updateRule(index, 'action', value)}
+                      disabled={disabled}
                     >
                       <SelectTrigger className="h-[52px]">
                         <SelectValue placeholder="Select action" />
@@ -241,11 +245,13 @@ export function RulesStep({ variations, initialRules = [], onChange }: RulesStep
                       value={rule.percentage}
                       onChange={(e) => updateRule(index, 'percentage', parseInt(e.target.value) || 0)}
                       className="w-full h-[52px] px-2 rounded-lg border border-gray-300 text-[16px] text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#3B82F6]"
+                      disabled={disabled}
                     />
                   </div>
                   <button
                     onClick={() => removeRule(index)}
-                    className="col-span-1 space-y-1 h-[52px] w-[52px] flex items-center justify-center rounded-lg border border-gray-300 text-gray-500 hover:text-[#EF4444] hover:border-[#EF4444] transition-colors"
+                    disabled={disabled}
+                    className={`col-span-1 space-y-1 h-[52px] w-[52px] flex items-center justify-center rounded-lg border border-gray-300 text-gray-500 hover:text-[#EF4444] hover:border-[#EF4444] transition-colors ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <Trash2 className="h-5 w-5" />
                   </button>
@@ -260,6 +266,7 @@ export function RulesStep({ variations, initialRules = [], onChange }: RulesStep
                       <Select
                         value={rule.rankingType}
                         onValueChange={(value) => updateRule(index, 'rankingType', value)}
+                        disabled={disabled}
                       >
                         <SelectTrigger className="h-[52px]">
                           <SelectValue placeholder="Select ranking type" />
@@ -280,6 +287,7 @@ export function RulesStep({ variations, initialRules = [], onChange }: RulesStep
                           <Select
                             value=""
                             onValueChange={(value) => addNextBestVariation(index, value)}
+                            disabled={disabled}
                           >
                             <SelectTrigger className="h-[52px]">
                               <SelectValue placeholder="Select variation" />
@@ -308,7 +316,7 @@ export function RulesStep({ variations, initialRules = [], onChange }: RulesStep
                                     size="sm"
                                     className="h-8 w-8 p-0"
                                     onClick={() => moveNextBestVariation(index, variationIndex, 'up')}
-                                    disabled={variationIndex === 0}
+                                    disabled={disabled || variationIndex === 0}
                                   >
                                     <ChevronUp className="h-4 w-4" />
                                   </Button>
@@ -317,7 +325,7 @@ export function RulesStep({ variations, initialRules = [], onChange }: RulesStep
                                     size="sm"
                                     className="h-8 w-8 p-0"
                                     onClick={() => moveNextBestVariation(index, variationIndex, 'down')}
-                                    disabled={variationIndex === rule.nextBestVariations.length - 1}
+                                    disabled={disabled || variationIndex === rule.nextBestVariations.length - 1}
                                   >
                                     <ChevronDown className="h-4 w-4" />
                                   </Button>
@@ -326,6 +334,7 @@ export function RulesStep({ variations, initialRules = [], onChange }: RulesStep
                                     size="sm"
                                     className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
                                     onClick={() => removeNextBestVariation(index, variationIndex)}
+                                    disabled={disabled}
                                   >
                                     <X className="h-4 w-4" />
                                   </Button>
@@ -348,6 +357,7 @@ export function RulesStep({ variations, initialRules = [], onChange }: RulesStep
                       <Select
                         value={rule.valueFormat}
                         onValueChange={(value) => updateRule(index, 'valueFormat', value)}
+                        disabled={disabled}
                       >
                         <SelectTrigger className="h-[52px]">
                           <SelectValue placeholder="Select value format" />
@@ -377,6 +387,7 @@ export function RulesStep({ variations, initialRules = [], onChange }: RulesStep
                                 value={item.weight}
                                 onChange={(e) => updateCheckValueItem(index, itemIndex, 'weight', e.target.value)}
                                 className="w-full h-[52px] px-3 rounded-lg border border-gray-300 text-[16px] text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#3B82F6]"
+                                disabled={disabled}
                               />
                             </div>
                             <div className="flex-1">
@@ -386,6 +397,7 @@ export function RulesStep({ variations, initialRules = [], onChange }: RulesStep
                                 onChange={(e) => updateCheckValueItem(index, itemIndex, 'value', e.target.value)}
                                 placeholder="Value"
                                 className="w-full h-[52px] px-3 rounded-lg border border-gray-300 text-[16px] text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#3B82F6]"
+                                disabled={disabled}
                               />
                             </div>
                             <Button
@@ -393,6 +405,7 @@ export function RulesStep({ variations, initialRules = [], onChange }: RulesStep
                               size="sm"
                               className="h-[52px] w-[52px] p-0 text-gray-500 hover:text-red-600 hover:bg-red-50"
                               onClick={() => removeCheckValueItem(index, itemIndex)}
+                              disabled={disabled}
                             >
                               <X className="h-4 w-4" />
                             </Button>
@@ -402,6 +415,7 @@ export function RulesStep({ variations, initialRules = [], onChange }: RulesStep
                           variant="outline"
                           className="w-full"
                           onClick={() => addCheckValueItem(index)}
+                          disabled={disabled}
                         >
                           Add Check Value Item
                         </Button>
@@ -417,7 +431,10 @@ export function RulesStep({ variations, initialRules = [], onChange }: RulesStep
       {getUnusedVariations().length > 0 && (
         <button
           onClick={addRule}
-          className="h-11 px-6 rounded-lg border border-[#3B82F6] text-[#3B82F6] text-[15px] font-medium hover:bg-[#EBF2FF] transition-colors flex items-center gap-2"
+          disabled={disabled}
+          className={`h-11 px-6 rounded-lg border border-[#3B82F6] text-[#3B82F6] text-[15px] font-medium transition-colors flex items-center gap-2 ${
+            disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#EBF2FF]'
+          }`}
         >
           <Plus className="h-4 w-4" />
           Add Another Rule
