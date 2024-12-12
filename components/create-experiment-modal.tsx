@@ -50,8 +50,29 @@ export function CreateExperimentModal({ isOpen, onClose, experiment }: CreateExp
   }, [currentStep, title, key, variations])
 
   const handleSave = () => {
-    // Implement saving logic here
-    console.log('Saving experiment:', { title, key, objective, status: 'Draft', variations });
+    const newExperiment = {
+      id: crypto.randomUUID(), // Generate a unique ID
+      title,
+      key,
+      createdBy: 'currentUser', // Replace with the actual user
+      objective,
+      status: 'Draft',
+      variations,
+      rules: [], // Initialize with an empty array or appropriate default value
+      createdDate: new Date().toISOString(),
+      statusHistory: [{ status: 'Draft', date: new Date().toISOString() }] // Initialize with the current status
+    };
+  
+    // Retrieve existing experiments from localStorage
+    const existingExperiments = JSON.parse(localStorage.getItem('experiments') || '[]');
+  
+    // Add the new experiment to the list
+    const updatedExperiments = [...existingExperiments, newExperiment];
+  
+    // Save the updated list back to localStorage
+    localStorage.setItem('experiments', JSON.stringify(updatedExperiments));
+  
+    console.log('Saving experiment:', newExperiment);
     onClose();
   };
 

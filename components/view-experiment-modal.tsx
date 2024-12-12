@@ -71,47 +71,49 @@ export function ViewExperimentModal({ experiment, onClose }: ViewExperimentModal
                 <div>
                   <h3 className="text-[20px] font-normal text-[#1B1B1B]">Rules</h3>
                   <Accordion type="single" collapsible className="w-full">
-                    {experiment.rules.map((rule, index) => (
-                      <AccordionItem key={index} value={`item-${index}`} className="border border-gray-200 rounded-lg overflow-hidden mb-2">
-                        <AccordionTrigger className="px-4 py-2 hover:no-underline hover:bg-gray-50">
-                          <div className="flex items-center justify-between w-full">
-                            <span className="font-medium text-[15px]">{rule.variation}</span>
-                            <div className="flex items-center space-x-2">
-                              <span className="text-sm text-gray-500">{rule.action}</span>
-                              <ChevronDown className="h-4 w-4" />
+                    {experiment.variations.map((variation, index) => {
+                      const rule = experiment.rules.find(r => r.variation === variation) || { action: 'allow', percentage: 100 };
+                      return (
+                        <AccordionItem key={index} value={`item-${index}`} className="border border-gray-200 rounded-lg overflow-hidden mb-2">
+                          <AccordionTrigger className="px-4 py-2 hover:no-underline hover:bg-gray-50">
+                            <div className="flex items-center justify-between w-full">
+                              <span className="font-medium text-[15px]">{variation}</span>
+                              <div className="flex items-center space-x-2">
+                                <span className="text-sm text-gray-500">{rule.action} ({rule.percentage}%)</span>
+                              </div>
                             </div>
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="px-4 py-2 bg-gray-50">
-                          <div className="space-y-2">
-                            <p><strong>Action:</strong> {rule.action}</p>
-                            <p><strong>Percentage:</strong> {rule.percentage}%</p>
-                            {rule.rankingType && <p><strong>Ranking Type:</strong> {rule.rankingType}</p>}
-                            {rule.nextBestVariations && (
-                              <div>
-                                <strong>Next Best Variations:</strong>
-                                <ul className="list-disc pl-5">
-                                  {rule.nextBestVariations.map((variation, idx) => (
-                                    <li key={idx}>{variation}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                            {rule.valueFormat && <p><strong>Value Format:</strong> {rule.valueFormat}</p>}
-                            {rule.checkValueItems && (
-                              <div>
-                                <strong>Check Value Items:</strong>
-                                <ul className="list-disc pl-5">
-                                  {rule.checkValueItems.map((item, idx) => (
-                                    <li key={idx}>Weight: {item.weight}, Value: {item.value}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    ))}
+                          </AccordionTrigger>
+                          <AccordionContent className="px-4 py-2 bg-gray-50">
+                            <div className="space-y-2">
+                              <p><strong>Action:</strong> {rule.action}</p>
+                              <p><strong>Percentage:</strong> {rule.percentage}%</p>
+                              {rule.rankingType && <p><strong>Ranking Type:</strong> {rule.rankingType}</p>}
+                              {rule.nextBestVariations && (
+                                <div>
+                                  <strong>Next Best Variations:</strong>
+                                  <ul className="list-disc pl-5">
+                                    {rule.nextBestVariations.map((variation, idx) => (
+                                      <li key={idx}>{variation}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              {rule.valueFormat && <p><strong>Value Format:</strong> {rule.valueFormat}</p>}
+                              {rule.checkValueItems && (
+                                <div>
+                                  <strong>Check Value Items:</strong>
+                                  <ul className="list-disc pl-5">
+                                    {rule.checkValueItems.map((item, idx) => (
+                                      <li key={idx}>Weight: {item.weight}, Value: {item.value}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      );
+                    })}
                   </Accordion>
                 </div>
               </div>

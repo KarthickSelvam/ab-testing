@@ -38,8 +38,14 @@ const dummyExperiments: Experiment[] = [
     variations: ['Control', '2% APR Reduction', '5% APR Reduction'],
     rules: [
       { variation: 'Control', action: 'allow', percentage: 40 },
-      { variation: '2% APR Reduction', action: 'allow', percentage: 50 },
-      { variation: '5% APR Reduction', action: 'allow', percentage: 65 },
+      { variation: '2% APR Reduction', action: 'suppress', percentage: 0 },
+      { 
+        variation: '5% APR Reduction', 
+        action: 'nextBestVariation', 
+        percentage: 60,
+        rankingType: 'static',
+        nextBestVariations: ['Control', '2% APR Reduction']
+      },
     ],
     createdDate: '2024-01-01',
     statusHistory: [
@@ -58,7 +64,16 @@ const dummyExperiments: Experiment[] = [
     status: 'Stopped',
     variations: ['2% Cash Back', '3x Reward Points'],
     rules: [
-      { variation: '2% Cash Back', action: 'allow', percentage: 50 },
+      { 
+        variation: '2% Cash Back', 
+        action: 'checkValue', 
+        percentage: 50,
+        valueFormat: 'number',
+        checkValueItems: [
+          { weight: 30, value: '500' },
+          { weight: 70, value: '1000' }
+        ]
+      },
       { variation: '3x Reward Points', action: 'allow', percentage: 50 },
     ],
     createdDate: '2024-01-15',
@@ -78,7 +93,12 @@ const dummyExperiments: Experiment[] = [
     variations: ['$3000 in 3 months', '$4000 in 3 months', '$5000 in 3 months'],
     rules: [
       { variation: '$3000 in 3 months', action: 'allow', percentage: 33 },
-      { variation: '$4000 in 3 months', action: 'allow', percentage: 33 },
+      { 
+        variation: '$4000 in 3 months', 
+        action: 'nextBestVariation', 
+        percentage: 33,
+        rankingType: 'dynamic'
+      },
       { variation: '$5000 in 3 months', action: 'allow', percentage: 34 },
     ],
     createdDate: '2024-02-01',
@@ -87,64 +107,6 @@ const dummyExperiments: Experiment[] = [
       { status: 'Running', changedBy: 'Natalie Porter', changedAt: '2024-02-05T11:30:00Z' },
       { status: 'Stopped', changedBy: 'Tom Holland', changedAt: '2024-02-15T16:00:00Z' },
       { status: 'Marked for Deletion', changedBy: 'Robert Downey', changedAt: '2024-02-20T09:45:00Z' },
-    ],
-  },
-  {
-    id: '4',
-    title: 'Annual Fee Waiver Duration',
-    key: 'annual_fee_waiver_duration',
-    createdBy: 'Scarlett Johansson',
-    objective: 'Assess impact of extended annual fee waiver on long-term retention',
-    status: 'Running',
-    variations: ['No Waiver', '1 Year Waiver', '2 Year Waiver'],
-    rules: [
-      { variation: 'No Waiver', action: 'allow', percentage: 33 },
-      { variation: '1 Year Waiver', action: 'allow', percentage: 33 },
-      { variation: '2 Year Waiver', action: 'allow', percentage: 34 },
-    ],
-    createdDate: '2024-02-15',
-    statusHistory: [
-      { status: 'Draft', changedBy: 'Scarlett Johansson', changedAt: '2024-02-15T13:00:00Z' },
-      { status: 'Running', changedBy: 'Mark Ruffalo', changedAt: '2024-02-18T10:30:00Z' },
-    ],
-  },
-  {
-    id: '5',
-    title: 'Credit Limit Increase Frequency',
-    key: 'credit_limit_increase_frequency',
-    createdBy: 'Chris Hemsworth',
-    objective: 'Determine optimal frequency of automatic credit limit increases',
-    status: 'Draft',
-    variations: ['6 Months', '12 Months', '18 Months'],
-    rules: [
-      { variation: '6 Months', action: 'allow', percentage: 33 },
-      { variation: '12 Months', action: 'allow', percentage: 33 },
-      { variation: '18 Months', action: 'allow', percentage: 34 },
-    ],
-    createdDate: '2024-03-01',
-    statusHistory: [
-      { status: 'Draft', changedBy: 'Chris Hemsworth', changedAt: '2024-03-01T09:00:00Z' },
-    ],
-  },
-  {
-    id: '6',
-    title: 'Balance Transfer Fee Reduction',
-    key: 'balance_transfer_fee_reduction',
-    createdBy: 'Jeremy Renner',
-    objective: 'Increase balance transfer activity by reducing fees',
-    status: 'Marked for Deletion',
-    variations: ['3% Fee', '2% Fee', '1% Fee'],
-    rules: [
-      { variation: '3% Fee', action: 'allow', percentage: 33 },
-      { variation: '2% Fee', action: 'allow', percentage: 33 },
-      { variation: '1% Fee', action: 'allow', percentage: 34 },
-    ],
-    createdDate: '2024-03-15',
-    statusHistory: [
-      { status: 'Draft', changedBy: 'Jeremy Renner', changedAt: '2024-03-15T11:00:00Z' },
-      { status: 'Running', changedBy: 'Elizabeth Olsen', changedAt: '2024-03-18T14:30:00Z' },
-      { status: 'Stopped', changedBy: 'Paul Bettany', changedAt: '2024-03-25T09:15:00Z' },
-      { status: 'Marked for Deletion', changedBy: 'Samuel L. Jackson', changedAt: '2024-03-30T16:00:00Z' },
     ],
   },
 ];
@@ -157,8 +119,8 @@ export function useExperiments() {
     if (storedExperiments) {
       setExperiments(JSON.parse(storedExperiments));
     } else {
-      setExperiments(dummyExperiments);
       localStorage.setItem('experiments', JSON.stringify(dummyExperiments));
+      setExperiments(dummyExperiments);
     }
   }, []);
 
@@ -167,6 +129,28 @@ export function useExperiments() {
     localStorage.setItem('experiments', JSON.stringify(newExperiments));
   };
 
-  return { experiments, updateExperiments };
+  const addExperiment = (experiment: Experiment) => {
+    const updatedExperiments = [...experiments, experiment];
+    updateExperiments(updatedExperiments);
+  };
+
+  const editExperiment = (updatedExperiment: Experiment) => {
+    const updatedExperiments = experiments.map(exp => 
+      exp.id === updatedExperiment.id ? updatedExperiment : exp
+    );
+    updateExperiments(updatedExperiments);
+  };
+
+  const deleteExperiment = (id: string) => {
+    const updatedExperiments = experiments.filter(exp => exp.id !== id);
+    updateExperiments(updatedExperiments);
+  };
+
+  return { 
+    experiments, 
+    addExperiment, 
+    editExperiment, 
+    deleteExperiment 
+  };
 }
 
